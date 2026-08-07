@@ -1,0 +1,28 @@
+html, body {
+  height: 100%;
+  margin: 0;
+}
+button {
+  font-size: 16px;
+}
+#clippycomicslabel {
+  font-size: 32px;
+}
+#datelabel {
+  font-size: 24px;
+}
+#contentdiv {
+    width: 70%;
+    margin: 2rem auto;
+    background: #888888;
+    padding: 20px;
+    text-align: center;
+}
+#comicdiv {
+  width: 100%;
+  height: auto;
+}
+#transcriptdiv {
+  max-height: 14dvh;
+  overflow-y: auto;
+}
