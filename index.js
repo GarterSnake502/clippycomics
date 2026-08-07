@@ -1,7 +1,7 @@
 const ee = (id) => document.getElementById(id);
-const maxDate = new Date(); // how far the user can go right
+const maxDate = new Date(); // how far the user can go right (by default, can't go past today (so the user can't look ahead))
 maxDate.setHours(0, 0, 0, 0); // normalize hours to midnight for comparison
-const minDate = new Date(2026, 7, 2); // January 1, 2027
+const minDate = new Date(2026, 7, 0); // January 1, 2027
 const currDate = new Date(maxDate);
 const maxIndex = 365; // ENTER COMIC COUNT HERE
 
