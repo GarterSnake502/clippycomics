@@ -9,6 +9,12 @@ var bookmark = 0;
 
 const msPerDay = 1000 * 60 * 60 * 24;
 
+function addDays(date, days) {
+  const result = new Date(date);
+  result.setDate(result.getDate() + days);
+  return result;
+}
+
 // --- Manage Comic Display --- //
 function formatDate(date) {
   return new Intl.DateTimeFormat()
@@ -16,7 +22,7 @@ function formatDate(date) {
     .replace(/\//g, '-'); // instead of 01/01/26, does 1-1-26
 }
 async function displayComicAtDate(date) {
-  const dayIndex = Math.floor((currDate - minDate) / msPerDay);
+  const dayIndex = Math.floor((date - minDate) / msPerDay);
   const dateFormatted = formatDate(date);
   ee('datelabel').innerText = dateFormatted;
   ee('comicdiv').src = './img/' + dayIndex + '.jpg';
@@ -60,14 +66,16 @@ function doPrev() {
   }
 }
 function doLatest() {
-  var maxIndexDate = new Date(minDate.getDate() + maxIndex);
+  var maxIndexDate = addDays(minDate, maxIndex);
   // set at maxIndex or maxDate, depending on if we've gone past maxIndex
-  console.log("MaxDate:");
   console.log(maxDate);
-  console.log("maxIndexDate:");
   console.log(maxIndexDate);
-  if (maxDate >= maxIndexDate) currDate.setTime(maxDate.getTime());
+  if (maxDate <= maxIndexDate) {
+    console.log("maxDate >= maxIndexDate");
+    currDate.setTime(maxDate.getTime());
+  }
   else currDate.setTime(maxIndexDate.getTime());
+  console.log(currDate);
   displayComicAtDate(currDate);
 }
 // --- Manage Cookies --- //
@@ -95,11 +103,11 @@ function getCookie(cname) {
 // --- Set Max Date --- //
 const maxDateIndex = Math.floor((maxDate - minDate) / msPerDay); // how many comics the current day covers
 if (maxDateIndex >= maxIndex) { // comics have ended--set maxDate to last comic
-  maxDate.setDate(minDate.getDate() + maxIndex);
+  maxDate.setTime(addDays(minDate, maxIndex).getTime());
 }
 
 // --- Load Bookmarked Comic --- //
 var loadedBookmark = getCookie('bookmark');
 if (loadedBookmark != '') bookmark = parseInt(loadedBookmark);
-currDate.setDate(minDate.getDate() + bookmark);
+currDate.setTime(addDays(minDate, bookmark).getTime());
 displayComicAtDate(currDate);
