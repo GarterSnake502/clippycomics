@@ -68,12 +68,7 @@ function doPrev() {
 function doLatest() {
   var maxIndexDate = addDays(minDate, maxIndex);
   // set at maxIndex or maxDate, depending on if we've gone past maxIndex
-  console.log(maxDate);
-  console.log(maxIndexDate);
-  if (maxDate <= maxIndexDate) {
-    console.log("maxDate >= maxIndexDate");
-    currDate.setTime(maxDate.getTime());
-  }
+  if (maxDate <= maxIndexDate) currDate.setTime(maxDate.getTime());
   else currDate.setTime(maxIndexDate.getTime());
   console.log(currDate);
   displayComicAtDate(currDate);
