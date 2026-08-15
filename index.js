@@ -83,13 +83,10 @@ function doJump() {
   }
 
   var jumpDate = new Date(year, month - 1, day);
-  if (jumpDate <= maxDate && jumpDate >= minDate) {
-    currDate.setTime(jumpDate.getTime());
-    displayComicAtDate(currDate);
-  }
-  else {
-    alert("There is no comic for the inputted date!");
-  }
+  if (jumpDate > maxDate) jumpDate.setTime(maxDate);
+  if (jumpDate < minDate) jumpDate.setTime(minDate);
+  currDate.setTime(jumpDate);
+  displayComicAtDate(currDate);
 }
 // --- Manage Cookies --- //
 function setCookie(cname, cvalue, exdays) {
