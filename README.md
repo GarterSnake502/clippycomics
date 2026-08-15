@@ -1,3 +1,4 @@
-Currently TODO:
+Current TODO:
 
-May
+- Add July
+- Potentially enhance UI
