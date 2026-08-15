@@ -70,8 +70,26 @@ function doLatest() {
   // set at maxIndex or maxDate, depending on if we've gone past maxIndex
   if (maxDate <= maxIndexDate) currDate.setTime(maxDate.getTime());
   else currDate.setTime(maxIndexDate.getTime());
-  console.log(currDate);
   displayComicAtDate(currDate);
+}
+function doJump() {
+  var month = parseInt(prompt("Enter month (1-12): "), 10);
+  var day = parseInt(prompt("Enter day: "), 10);
+  var year = parseInt(prompt("Enter year: "), 10);
+
+  if (isNaN(day) || isNaN(month) || isNaN(year)) {
+    alert("The inputted date was invalid.");
+    return;
+  }
+
+  var jumpDate = new Date(year, month - 1, day);
+  if (jumpDate <= maxDate && jumpDate >= minDate) {
+    currDate.setTime(jumpDate.getTime());
+    displayComicAtDate(currDate);
+  }
+  else {
+    alert("There is no comic for the inputted date!");
+  }
 }
 // --- Manage Cookies --- //
 function setCookie(cname, cvalue, exdays) {
