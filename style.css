@@ -13,6 +13,7 @@ button {
 }
 #contentdiv {
     width: 512px;
+    max-width: 95%;
     margin: 12px auto;
     background: #888888;
     text-align: center;
