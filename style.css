@@ -12,8 +12,8 @@ button {
   font-size: 24px;
 }
 #contentdiv {
-    width: 70%;
-    margin: 2rem auto;
+    width: 512px;
+    margin: 12px auto;
     background: #888888;
     text-align: center;
 }
