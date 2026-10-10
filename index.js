@@ -75,7 +75,9 @@ function doLatest() {
 function doJump() {
   var month = parseInt(prompt("Enter month (1-12): "), 10);
   var day = parseInt(prompt("Enter day: "), 10);
-  var year = parseInt(prompt("Enter year: "), 10);
+  var yearStr = prompt("Enter year (Default 2027): ");
+  if (yearStr == '') yearStr = '2027'; // hardcoded default 2027
+  var year = parseInt(yearStr, 10);
 
   if (isNaN(day) || isNaN(month) || isNaN(year)) {
     alert("The inputted date was invalid.");
