@@ -35,7 +35,6 @@ async function displayComicAtDate(date) {
   const dateFormatted = formatDate(date);
   ee('datelabel').innerText = dateFormatted;
   ee('comicdiv').src = './img/' + dayIndex + '.jpg';
-  displayDiscussion(dayIndex);
 
   ee('nextbtn').disabled = (currDate >= maxDate || dayIndex >= maxIndex);
   ee('prevbtn').disabled = (currDate <= minDate);
@@ -53,42 +52,12 @@ async function displayComicAtDate(date) {
   bookmark = dayIndex;
   setCookie('bookmark', bookmark, 365);
 }
-function displayDiscussion(comicId) {
-  // ai-assisted incorporation of Giscus for comment system
-  const discussion = ee('discussiondiv');
-  discussion.replaceChildren();
-
-  const configValues = [
-    giscusConfig.repoId,
-    giscusConfig.category,
-    giscusConfig.categoryId,
-    giscusConfig.theme
-  ];
-  if (configValues.some(value => !value || value.startsWith('REPLACE_'))) {
-    const notice = document.createElement('p');
-    notice.innerText = 'Giscus comments are not configured yet.';
-    discussion.append(notice);
-    return;
-  }
-
-  const script = document.createElement('script');
-  script.src = 'https://giscus.app/client.js';
-  script.async = true;
-  script.crossOrigin = 'anonymous';
-  script.dataset.repo = giscusConfig.repo;
-  script.dataset.repoId = giscusConfig.repoId;
-  script.dataset.category = giscusConfig.category;
-  script.dataset.categoryId = giscusConfig.categoryId;
-  script.dataset.mapping = 'specific';
-  script.dataset.term = "Comic " + String(comicId);
-  script.dataset.strict = '0';
-  script.dataset.reactionsEnabled = giscusConfig.reactionsEnabled;
-  script.dataset.emitMetadata = '0';
-  script.dataset.inputPosition = 'top';
-  script.dataset.theme = giscusConfig.theme;
-  script.dataset.lang = 'en';
-  discussion.append(script);
+// --- Manage Comments --- //
+function displayComics(dayIndex) {
+  var cHist = ee('comichistory');
 }
+
+// --- Manage Transcripts --- //
 async function loadTranscript(filename) {
   const response = await fetch(filename);
 
@@ -158,6 +127,41 @@ function getCookie(cname) {
   }
   return "";
 }
+// --- Manage Comments --- //
+const API_URL = "https://cc-comments-api.trouttrifle.workers.dev";
+
+// Retrieve comments
+async function getComments(comic) {
+    const response = await fetch(
+        `${API_URL}/comments?comic=${encodeURIComponent(comic)}`
+    );
+
+    if (!response.ok) {
+        throw new Error("Failed to load comments");
+    }
+
+    return await response.json();
+}
+
+// Post a comment
+async function postComment(comic, name, message) {
+    const response = await fetch(`${API_URL}/comments`, {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify({ comic, name, message })
+    });
+
+    const result = await response.json();
+
+    if (!response.ok) {
+        throw new Error(result.error || "Failed to post comment");
+    }
+
+    return result;
+}
+
 // --- Set Max Date --- //
 const maxDateIndex = Math.floor((maxDate - minDate) / msPerDay); // how many comics the current day covers
 if (maxDateIndex >= maxIndex) { // comics have ended--set maxDate to last comic
