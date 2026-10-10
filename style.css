@@ -22,6 +22,14 @@ button {
   width: 95%;
   height: auto;
 }
+#discussionsection {
+  width: 95%;
+  margin: 16px auto;
+  text-align: left;
+}
+#discussionsection h2 {
+  text-align: center;
+}
 #transcriptdiv {
   max-height: 14dvh;
   overflow-y: auto;

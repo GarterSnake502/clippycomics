@@ -5,6 +5,15 @@ const minDate = new Date(2026, 7, 0); // January 1, 2027
 const currDate = new Date(maxDate);
 const maxIndex = 365; // ENTER COMIC COUNT HERE
 
+const giscusConfig = {
+  repo: 'GarterSnake502/ClippyComics',
+  repoId: 'R_kgDOTxNh2Q',
+  category: 'Comments',
+  categoryId: 'DIC_kwDOTxNh2c4DHhUp',
+  theme: 'light',
+  reactionsEnabled: "0"
+};
+
 var bookmark = 0;
 
 const msPerDay = 1000 * 60 * 60 * 24;
@@ -26,6 +35,7 @@ async function displayComicAtDate(date) {
   const dateFormatted = formatDate(date);
   ee('datelabel').innerText = dateFormatted;
   ee('comicdiv').src = './img/' + dayIndex + '.jpg';
+  displayDiscussion(dayIndex);
 
   ee('nextbtn').disabled = (currDate >= maxDate || dayIndex >= maxIndex);
   ee('prevbtn').disabled = (currDate <= minDate);
@@ -42,6 +52,42 @@ async function displayComicAtDate(date) {
 
   bookmark = dayIndex;
   setCookie('bookmark', bookmark, 365);
+}
+function displayDiscussion(comicId) {
+  // ai-assisted incorporation of Giscus for comment system
+  const discussion = ee('discussiondiv');
+  discussion.replaceChildren();
+
+  const configValues = [
+    giscusConfig.repoId,
+    giscusConfig.category,
+    giscusConfig.categoryId,
+    giscusConfig.theme
+  ];
+  if (configValues.some(value => !value || value.startsWith('REPLACE_'))) {
+    const notice = document.createElement('p');
+    notice.innerText = 'Comic discussions are not configured yet.';
+    discussion.append(notice);
+    return;
+  }
+
+  const script = document.createElement('script');
+  script.src = 'https://giscus.app/client.js';
+  script.async = true;
+  script.crossOrigin = 'anonymous';
+  script.dataset.repo = giscusConfig.repo;
+  script.dataset.repoId = giscusConfig.repoId;
+  script.dataset.category = giscusConfig.category;
+  script.dataset.categoryId = giscusConfig.categoryId;
+  script.dataset.mapping = 'specific';
+  script.dataset.term = "Comic " + String(comicId);
+  script.dataset.strict = '0';
+  script.dataset.reactionsEnabled = giscusConfig.reactionsEnabled;
+  script.dataset.emitMetadata = '0';
+  script.dataset.inputPosition = 'top';
+  script.dataset.theme = giscusConfig.theme;
+  script.dataset.lang = 'en';
+  discussion.append(script);
 }
 async function loadTranscript(filename) {
   const response = await fetch(filename);
