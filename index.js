@@ -66,7 +66,7 @@ function displayDiscussion(comicId) {
   ];
   if (configValues.some(value => !value || value.startsWith('REPLACE_'))) {
     const notice = document.createElement('p');
-    notice.innerText = 'Comic discussions are not configured yet.';
+    notice.innerText = 'Giscus comments are not configured yet.';
     discussion.append(notice);
     return;
   }
