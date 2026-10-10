@@ -1,6 +1,7 @@
 html, body {
   height: 100%;
   margin: 0;
+  background: #333;
 }
 button {
   font-size: 16px;
@@ -22,13 +23,57 @@ button {
   width: 95%;
   height: auto;
 }
-#discussionsection {
+#commentdiv {
   width: 95%;
   margin: 16px auto;
   text-align: left;
 }
-#discussionsection h2 {
-  text-align: center;
+#commentinput {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+#commentname,
+#commentmessage {
+  box-sizing: border-box;
+  width: 100%;
+  font: inherit;
+  background: #AAA;
+}
+#commentmessage {
+  min-height: 90px;
+  resize: vertical;
+}
+#commentsubmit {
+  align-self: flex-start;
+}
+#commentstatus {
+  min-height: 1em;
+  margin: 0;
+}
+#commenthistorydiv {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 16px;
+}
+.commentbubble {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 10px;
+  border: 1px solid #000;
+  border-radius: 0;
+  background: #999;
+  overflow-wrap: anywhere;
+}
+.commentmessage {
+  margin: 6px 0;
+  font-size: 0.9em;
+  white-space: pre-wrap;
+}
+.commenttimestamp {
+  color: #555;
+  font-size: 0.8em;
 }
 #transcriptdiv {
   max-height: 14dvh;

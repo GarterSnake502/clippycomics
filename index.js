@@ -5,16 +5,9 @@ const minDate = new Date(2026, 7, 0); // January 1, 2027
 const currDate = new Date(maxDate);
 const maxIndex = 365; // ENTER COMIC COUNT HERE
 
-const giscusConfig = {
-  repo: 'GarterSnake502/ClippyComics',
-  repoId: 'R_kgDOTxNh2Q',
-  category: 'Comments',
-  categoryId: 'DIC_kwDOTxNh2c4DHhUp',
-  theme: 'light',
-  reactionsEnabled: "0"
-};
-
 var bookmark = 0;
+let activeComicId = null;
+let commentLoadId = 0;
 
 const msPerDay = 1000 * 60 * 60 * 24;
 
@@ -35,6 +28,8 @@ async function displayComicAtDate(date) {
   const dateFormatted = formatDate(date);
   ee('datelabel').innerText = dateFormatted;
   ee('comicdiv').src = './img/' + dayIndex + '.jpg';
+  activeComicId = dayIndex;
+  displayComments(dayIndex);
 
   ee('nextbtn').disabled = (currDate >= maxDate || dayIndex >= maxIndex);
   ee('prevbtn').disabled = (currDate <= minDate);
@@ -52,9 +47,24 @@ async function displayComicAtDate(date) {
   bookmark = dayIndex;
   setCookie('bookmark', bookmark, 365);
 }
-// --- Manage Comments --- //
-function displayComics(dayIndex) {
-  var cHist = ee('comichistory');
+function createCommentBubble(comment) {
+  const bubble = document.createElement('article');
+  bubble.className = 'commentbubble';
+
+  const author = document.createElement('strong');
+  author.className = 'commentauthor';
+  author.innerText = comment.name || 'Anonymous';
+
+  const message = document.createElement('p');
+  message.className = 'commentmessage';
+  message.innerText = comment.message || '';
+
+  const timestamp = document.createElement('time');
+  timestamp.className = 'commenttimestamp';
+  timestamp.innerText = comment.created_at || '';
+
+  bubble.append(author, message, timestamp);
+  return bubble;
 }
 
 // --- Manage Transcripts --- //
@@ -130,6 +140,75 @@ function getCookie(cname) {
 // --- Manage Comments --- //
 const API_URL = "https://cc-comments-api.trouttrifle.workers.dev";
 
+// displays previous comments in commenthistorydiv
+async function displayComments(dayIndex) {
+  if (dayIndex !== activeComicId) return false;
+
+  const loadId = ++commentLoadId;
+  const history = ee('commenthistorydiv');
+  const status = ee('commentstatus');
+  history.replaceChildren();
+  status.innerText = 'Loading comments...';
+
+  try {
+    const comments = await getComments(dayIndex);
+    if (loadId !== commentLoadId || dayIndex !== activeComicId) return false;
+    if (!Array.isArray(comments)) {
+      throw new Error('The comments response was not a list.');
+    }
+
+    for (const comment of comments) {
+      history.append(createCommentBubble(comment));
+    }
+    status.innerText = comments.length ? '' : 'No comments yet.';
+    return true;
+  } catch (error) {
+    if (loadId === commentLoadId && dayIndex === activeComicId) {
+      console.error('Failed to load comments:', error);
+      status.innerText = 'Could not load comments. Please try again.';
+    }
+    return false;
+  }
+}
+
+async function submitComment(event) {
+  event.preventDefault();
+  const comicId = activeComicId;
+  if (comicId === null) return;
+
+  const nameInput = ee('commentname');
+  const messageInput = ee('commentmessage');
+  const submitButton = ee('commentsubmit');
+  const status = ee('commentstatus');
+  const name = nameInput.value.trim() || 'Anonymous';
+  const message = messageInput.value.trim();
+  if (!message) {
+    messageInput.focus();
+    return;
+  }
+  setCookie('commentname', encodeURIComponent(nameInput.value.trim()), 365);
+
+  submitButton.disabled = true;
+  status.innerText = 'Sending comment...';
+  try {
+    await postComment(comicId, name, message);
+    messageInput.value = '';
+    const refreshed = await displayComments(comicId);
+    if (comicId === activeComicId) {
+      status.innerText = refreshed
+        ? 'Comment posted.'
+        : 'Comment posted, but the history could not be refreshed.';
+    }
+  } catch (error) {
+    console.error('Failed to post comment:', error);
+    if (comicId === activeComicId) {
+      status.innerText = `Could not send comment: ${error.message}`;
+    }
+  } finally {
+    submitButton.disabled = false;
+  }
+}
+
 // Retrieve comments
 async function getComments(comic) {
     const response = await fetch(
@@ -162,6 +241,7 @@ async function postComment(comic, name, message) {
     return result;
 }
 
+
 // --- Set Max Date --- //
 const maxDateIndex = Math.floor((maxDate - minDate) / msPerDay); // how many comics the current day covers
 if (maxDateIndex >= maxIndex) { // comics have ended--set maxDate to last comic
@@ -172,4 +252,9 @@ if (maxDateIndex >= maxIndex) { // comics have ended--set maxDate to last comic
 var loadedBookmark = getCookie('bookmark');
 if (loadedBookmark != '') bookmark = parseInt(loadedBookmark);
 currDate.setTime(addDays(minDate, bookmark).getTime());
+ee('commentname').value = getCookie('commentname');
+ee('commentname').addEventListener('input', () => {
+  setCookie('commentname', encodeURIComponent(ee('commentname').value.trim()), 365);
+});
+ee('commentinput').addEventListener('submit', submitComment);
 displayComicAtDate(currDate);
