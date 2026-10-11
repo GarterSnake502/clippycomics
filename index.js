@@ -127,7 +127,42 @@ function getCookie(cname) {
 // --- Manage Comments --- //
 const API_URL = "https://cc-comments-api.trouttrifle.workers.dev";
 
-// displays previous comments in commenthistorydiv
+// pings for new comments every 1500ms, posting them so the user can see realtime chat
+var commentsLoaded = [];
+async function pingForNewComments(dayIndex, maxCommentId) {
+  var maxId = maxCommentId;
+  const pingNew = async function () {
+    try {
+      const response = await getComments(dayIndex, 1);
+      const comments = response.comments;
+      if (dayIndex != activeComicId) return false;
+      
+      if (!Array.isArray(comments)) {
+        throw new Error('The comments response was not a list.');
+      }
+
+      for (const comment of comments.reverse()) {
+        if (!commentsLoaded.includes(comment.id) && comment.id > maxId) {
+          commentsLoaded.push(comment.id);
+          maxId = comment.id;
+          ee('commenthistorydiv').prepend(createCommentBubble({
+            ...comment
+          }));
+        }
+      }
+    }
+    catch (error) {
+      console.log("Failed to ping comments: " + error);
+    }
+    finally {
+      if (dayIndex === activeComicId) {
+        setTimeout(pingNew, 1500);
+      }
+    }
+  }
+  setTimeout(pingNew, 1500);
+}
+// displays comments in comment history according to the desired page
 let commentLoadId = 0;
 async function displayComments(dayIndex, page = 1) {
   if (dayIndex !== activeComicId) return false;
@@ -146,10 +181,16 @@ async function displayComments(dayIndex, page = 1) {
     }
     if (page === 1) {
       history.replaceChildren();
+      commentsLoaded = [];
       status.innerText = 'Loading comments...';
     }
+    let highestCommentId = 0;
     for (const comment of comments) {
-      history.append(createCommentBubble(comment));
+      if (!commentsLoaded.includes(comment.id)) {
+        history.append(createCommentBubble(comment));
+        if (comment.id > highestCommentId) highestCommentId = comment.id;
+        commentsLoaded.push(comment.id);
+      }
     }
     history.querySelector('.morecomments')?.remove();
     if (hasMore) {
@@ -157,6 +198,7 @@ async function displayComments(dayIndex, page = 1) {
     }
     if (page === 1) {
       status.innerText = comments.length ? '' : 'No comments yet.';
+      pingForNewComments(dayIndex, highestCommentId);
     } else {
       status.innerText = '';
     }
@@ -171,6 +213,7 @@ async function displayComments(dayIndex, page = 1) {
     return false;
   }
 }
+// creates more button and links it to a page refresh
 function createMoreButton(dayIndex, page) {
   const link = document.createElement('a');
   link.className = 'morecomments';
@@ -192,6 +235,7 @@ function createMoreButton(dayIndex, page) {
   });
   return link;
 }
+// creates history bubble for ui
 function createCommentBubble(comment) {
   const bubble = document.createElement('article');
   bubble.className = 'commentbubble';
@@ -211,6 +255,7 @@ function createCommentBubble(comment) {
   bubble.append(author, message, timestamp);
   return bubble;
 }
+// Submit comment to post + update comment history
 async function submitComment(event) {
   event.preventDefault();
   const comicId = activeComicId;
@@ -229,12 +274,11 @@ async function submitComment(event) {
   setCookie('commentname', encodeURIComponent(nameInput.value.trim()), 365);
 
   submitButton.disabled = true;
-  status.innerText = 'Sending comment...';
   try {
     const result = await postComment(comicId, name, message);
     messageInput.value = '';
     if (comicId === activeComicId && result.comment) {
-      status.innerText = "Comment posted.";
+      commentsLoaded.push(result.comment.id);
       ee('commenthistorydiv').prepend(createCommentBubble({
         ...result.comment
       }));
@@ -248,20 +292,6 @@ async function submitComment(event) {
     submitButton.disabled = false;
   }
 }
-
-// Retrieve comments
-async function getComments(comic, page = 1) {
-    const response = await fetch(
-        `${API_URL}/comments?comic=${encodeURIComponent(comic)}&page=${encodeURIComponent(page)}`
-    );
-
-    if (!response.ok) {
-        throw new Error("Failed to load comments");
-    }
-
-    return await response.json();
-}
-
 // Post a comment
 async function postComment(comic, name, message) {
     const response = await fetch(`${API_URL}/comments`, {
@@ -280,7 +310,18 @@ async function postComment(comic, name, message) {
 
     return result;
 }
+// Retrieve comments
+async function getComments(comic, page = 1) {
+    const response = await fetch(
+        `${API_URL}/comments?comic=${encodeURIComponent(comic)}&page=${encodeURIComponent(page)}`
+    );
 
+    if (!response.ok) {
+        throw new Error("Failed to load comments");
+    }
+
+    return await response.json();
+}
 
 // --- Set Max Date --- //
 const maxDateIndex = Math.floor((maxDate - minDate) / msPerDay); // how many comics the current day covers
