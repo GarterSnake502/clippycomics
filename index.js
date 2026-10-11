@@ -148,6 +148,7 @@ async function pingForNewComments(dayIndex, maxCommentId) {
           ee('commenthistorydiv').prepend(createCommentBubble({
             ...comment
           }));
+          ee('commentstatus').innerText = '';
         }
       }
     }
@@ -308,6 +309,7 @@ async function postComment(comic, name, message) {
         throw new Error(result.error || "Failed to post comment");
     }
 
+    ee('commentstatus').innerText = "";
     return result;
 }
 // Retrieve comments
