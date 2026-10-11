@@ -213,7 +213,7 @@ async function pingForNewComments(dayIndex, maxCommentId) {
   }
   setTimeout(pingNew, 1500);
 }
-// creates more button and links it to a page refresh
+// creates more button and links it to displaying the next page
 function createMoreButton(dayIndex, page) {
   const link = document.createElement('a');
   link.className = 'morecomments';
@@ -235,6 +235,16 @@ function createMoreButton(dayIndex, page) {
   });
   return link;
 }
+function formatCommentTime(timestamp) {
+  const date = new Date(timestamp.replace(' ', 'T') + 'Z');
+  if (Number.isNaN(date.getTime())) return timestamp;
+
+  return new Intl.DateTimeFormat(undefined, {
+    dateStyle: 'medium',
+    timeStyle: 'short',
+    hour12: true
+  }).format(date);
+}
 // creates history bubble for ui
 function createCommentBubble(comment) {
   const bubble = document.createElement('article');
@@ -250,7 +260,9 @@ function createCommentBubble(comment) {
 
   const timestamp = document.createElement('time');
   timestamp.className = 'commenttimestamp';
-  timestamp.innerText = comment.created_at || '';
+  timestamp.innerText = comment.created_at
+    ? formatCommentTime(comment.created_at)
+    : '';
 
   bubble.append(author, message, timestamp);
   return bubble;
