@@ -128,7 +128,7 @@ function getCookie(cname) {
 const API_URL = "https://cc-comments-api.trouttrifle.workers.dev";
 
 // displays previous comments in commenthistorydiv
-async function displayComments(dayIndex) {
+async function displayComments(dayIndex, page = 1) {
   if (dayIndex !== activeComicId) return false;
 
   const loadId = ++commentLoadId;
@@ -138,7 +138,9 @@ async function displayComments(dayIndex) {
   status.innerText = 'Loading comments...';
 
   try {
-    const comments = await getComments(dayIndex);
+    const response = await getComments(dayIndex, page = 1);
+    const comments = response.comments;
+    const hasMore = response.hasMore;
     if (loadId !== commentLoadId || dayIndex !== activeComicId) return false;
     if (!Array.isArray(comments)) {
       throw new Error('The comments response was not a list.');
@@ -150,7 +152,7 @@ async function displayComments(dayIndex) {
     status.innerText = comments.length ? '' : 'No comments yet.';
     return true;
   } catch (error) {
-    if (loadId === commentLoadId && dayIndex === activeComicId) {
+    if (loadId === commentLoadId && dayIndex === activeComicId) { // only display errors if still on page
       console.error('Failed to load comments:', error);
       status.innerText = 'Could not load comments. Please try again.';
     }
@@ -215,9 +217,9 @@ async function submitComment(event) {
 }
 
 // Retrieve comments
-async function getComments(comic) {
+async function getComments(comic, page = 1) {
     const response = await fetch(
-        `${API_URL}/comments?comic=${encodeURIComponent(comic)}`
+        `${API_URL}/comments?comic=${encodeURIComponent(comic)}&page=${encodeURIComponent(page)}`
     );
 
     if (!response.ok) {
