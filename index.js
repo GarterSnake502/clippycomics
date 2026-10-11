@@ -134,11 +134,13 @@ async function displayComments(dayIndex, page = 1) {
   const loadId = ++commentLoadId;
   const history = ee('commenthistorydiv');
   const status = ee('commentstatus');
-  history.replaceChildren();
-  status.innerText = 'Loading comments...';
+  if (page === 1) {
+    history.replaceChildren();
+    status.innerText = 'Loading comments...';
+  }
 
   try {
-    const response = await getComments(dayIndex, page = 1);
+    const response = await getComments(dayIndex, page);
     const comments = response.comments;
     const hasMore = response.hasMore;
     if (loadId !== commentLoadId || dayIndex !== activeComicId) return false;
@@ -149,15 +151,42 @@ async function displayComments(dayIndex, page = 1) {
     for (const comment of comments) {
       history.append(createCommentBubble(comment));
     }
-    status.innerText = comments.length ? '' : 'No comments yet.';
+    // has more comics?
+    history.querySelector('.morecomments')?.remove();
+    if (hasMore) {
+      history.append(createMoreButton(dayIndex, page + 1));
+    }
+    if (page === 1) {
+      status.innerText = comments.length ? '' : 'No comments yet.';
+    } else {
+      status.innerText = '';
+    }
     return true;
   } catch (error) {
     if (loadId === commentLoadId && dayIndex === activeComicId) { // only display errors if still on page
       console.error('Failed to load comments:', error);
-      status.innerText = 'Could not load comments. Please try again.';
+      status.innerText = page === 1
+        ? 'Could not load comments. Please try again.'
+        : 'Could not load more comments. Please try again.';
     }
     return false;
   }
+}
+function createMoreButton(dayIndex, page) {
+  const link = document.createElement('a');
+  link.className = 'morecomments';
+  link.href = '#commenthistorydiv';
+  link.innerText = 'Load more comments';
+  link.addEventListener('click', async event => {
+    event.preventDefault();
+    link.remove();
+    ee('commentstatus').innerText = 'Loading more comments...';
+    const loaded = await displayComments(dayIndex, page);
+    if (!loaded && dayIndex === activeComicId) {
+      ee('commenthistorydiv').append(createMoreButton(dayIndex, page));
+    }
+  });
+  return link;
 }
 function createCommentBubble(comment) {
   const bubble = document.createElement('article');

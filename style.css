@@ -57,6 +57,12 @@ button {
   gap: 10px;
   margin-top: 16px;
 }
+.morecomments {
+  align-self: center;
+  color: #333;
+  text-align: center;
+  text-decoration: underline;
+}
 .commentbubble {
   width: 100%;
   box-sizing: border-box;
