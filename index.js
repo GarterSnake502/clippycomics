@@ -7,7 +7,6 @@ const maxIndex = 365; // ENTER COMIC COUNT HERE
 
 var bookmark = 0;
 let activeComicId = null;
-let commentLoadId = 0;
 
 const msPerDay = 1000 * 60 * 60 * 24;
 
@@ -32,6 +31,7 @@ async function displayComicAtDate(date) {
 
   activeComicId = dayIndex;
 
+  ee('commenthistorydiv').replaceChildren(); // clear comment history
   displayComments(dayIndex);
   loadTranscript(activeComicId);
 
@@ -47,7 +47,7 @@ async function displayComicAtDate(date) {
 // --- Manage Transcripts --- //
 async function loadTranscript(dayIndex) {
   try {
-    const response = await fetch(`./transcript/${activeComicId}.txt`);
+    const response = await fetch(`./transcript/${dayIndex}.txt`);
 
     if (!response.ok) {
         throw new Error(`Failed to load ${filename}`);
@@ -128,16 +128,13 @@ function getCookie(cname) {
 const API_URL = "https://cc-comments-api.trouttrifle.workers.dev";
 
 // displays previous comments in commenthistorydiv
+let commentLoadId = 0;
 async function displayComments(dayIndex, page = 1) {
   if (dayIndex !== activeComicId) return false;
 
   const loadId = ++commentLoadId;
   const history = ee('commenthistorydiv');
   const status = ee('commentstatus');
-  if (page === 1) {
-    history.replaceChildren();
-    status.innerText = 'Loading comments...';
-  }
 
   try {
     const response = await getComments(dayIndex, page);
@@ -147,11 +144,13 @@ async function displayComments(dayIndex, page = 1) {
     if (!Array.isArray(comments)) {
       throw new Error('The comments response was not a list.');
     }
-
+    if (page === 1) {
+      history.replaceChildren();
+      status.innerText = 'Loading comments...';
+    }
     for (const comment of comments) {
       history.append(createCommentBubble(comment));
     }
-    // has more comics?
     history.querySelector('.morecomments')?.remove();
     if (hasMore) {
       history.append(createMoreButton(dayIndex, page + 1));
@@ -179,11 +178,16 @@ function createMoreButton(dayIndex, page) {
   link.innerText = 'Load more comments';
   link.addEventListener('click', async event => {
     event.preventDefault();
-    link.remove();
+    if (link.getAttribute('disabled') === 'true') return;
+
+    link.innerText = 'Loading...'; // space to ensure link still takes up space
+    link.setAttribute('disabled', 'true');
     ee('commentstatus').innerText = 'Loading more comments...';
+
     const loaded = await displayComments(dayIndex, page);
     if (!loaded && dayIndex === activeComicId) {
-      ee('commenthistorydiv').append(createMoreButton(dayIndex, page));
+      link.innerText = 'Load more comments';
+      link.removeAttribute('disabled');
     }
   });
   return link;
@@ -227,13 +231,13 @@ async function submitComment(event) {
   submitButton.disabled = true;
   status.innerText = 'Sending comment...';
   try {
-    await postComment(comicId, name, message);
+    const result = await postComment(comicId, name, message);
     messageInput.value = '';
-    const refreshed = await displayComments(comicId);
-    if (comicId === activeComicId) {
-      status.innerText = refreshed
-        ? 'Comment posted.'
-        : 'Comment posted, but the history could not be refreshed.';
+    if (comicId === activeComicId && result.comment) {
+      status.innerText = "Comment posted.";
+      ee('commenthistorydiv').prepend(createCommentBubble({
+        ...result.comment
+      }));
     }
   } catch (error) {
     console.error('Failed to post comment:', error);
