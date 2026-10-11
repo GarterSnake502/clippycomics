@@ -26,56 +26,43 @@ function formatDate(date) {
 async function displayComicAtDate(date) {
   const dayIndex = Math.floor((date - minDate) / msPerDay);
   const dateFormatted = formatDate(date);
+
   ee('datelabel').innerText = dateFormatted;
   ee('comicdiv').src = './img/' + dayIndex + '.jpg';
+
   activeComicId = dayIndex;
+
   displayComments(dayIndex);
+  loadTranscript(activeComicId);
 
   ee('nextbtn').disabled = (currDate >= maxDate || dayIndex >= maxIndex);
   ee('prevbtn').disabled = (currDate <= minDate);
   ee('latestbtn').disabled = (currDate >= maxDate || dayIndex >= maxIndex);
 
-  try {
-      const transcript = await loadTranscript(
-          `./transcript/${dayIndex}.txt`
-      );
-      ee("transcriptdiv").innerText = transcript;
-  } catch {
-      ee("transcriptdiv").innerText = "";
-  }
-
   bookmark = dayIndex;
   setCookie('bookmark', bookmark, 365);
 }
-function createCommentBubble(comment) {
-  const bubble = document.createElement('article');
-  bubble.className = 'commentbubble';
 
-  const author = document.createElement('strong');
-  author.className = 'commentauthor';
-  author.innerText = comment.name || 'Anonymous';
-
-  const message = document.createElement('p');
-  message.className = 'commentmessage';
-  message.innerText = comment.message || '';
-
-  const timestamp = document.createElement('time');
-  timestamp.className = 'commenttimestamp';
-  timestamp.innerText = comment.created_at || '';
-
-  bubble.append(author, message, timestamp);
-  return bubble;
-}
 
 // --- Manage Transcripts --- //
-async function loadTranscript(filename) {
-  const response = await fetch(filename);
+async function loadTranscript(dayIndex) {
+  try {
+    const response = await fetch(`./transcript/${activeComicId}.txt`);
 
-  if (!response.ok) {
-      throw new Error(`Failed to load ${filename}`);
+    if (!response.ok) {
+        throw new Error(`Failed to load ${filename}`);
+    }
+
+    const transcript = await response.text();
+
+    if (activeComicId == dayIndex) { // makes sure user hasn't switched tabs
+      ee("transcriptdiv").innerText = transcript;
+    }
+  } catch {
+    if (activeComicId === dayIndex) {
+      ee("transcriptdiv").innerText = "";
+    }
   }
-
-  return await response.text();
 }
 // --- Manage Buttons --- //
 function doNext() {
@@ -170,7 +157,25 @@ async function displayComments(dayIndex) {
     return false;
   }
 }
+function createCommentBubble(comment) {
+  const bubble = document.createElement('article');
+  bubble.className = 'commentbubble';
 
+  const author = document.createElement('strong');
+  author.className = 'commentauthor';
+  author.innerText = comment.name || 'Anonymous';
+
+  const message = document.createElement('p');
+  message.className = 'commentmessage';
+  message.innerText = comment.message || '';
+
+  const timestamp = document.createElement('time');
+  timestamp.className = 'commenttimestamp';
+  timestamp.innerText = comment.created_at || '';
+
+  bubble.append(author, message, timestamp);
+  return bubble;
+}
 async function submitComment(event) {
   event.preventDefault();
   const comicId = activeComicId;
