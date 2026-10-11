@@ -126,43 +126,6 @@ function getCookie(cname) {
 }
 // --- Manage Comments --- //
 const API_URL = "https://cc-comments-api.trouttrifle.workers.dev";
-
-// pings for new comments every 1500ms, posting them so the user can see realtime chat
-var commentsLoaded = [];
-async function pingForNewComments(dayIndex, maxCommentId) {
-  var maxId = maxCommentId;
-  const pingNew = async function () {
-    try {
-      const response = await getComments(dayIndex, 1);
-      const comments = response.comments;
-      if (dayIndex != activeComicId) return false;
-      
-      if (!Array.isArray(comments)) {
-        throw new Error('The comments response was not a list.');
-      }
-
-      for (const comment of comments.reverse()) {
-        if (!commentsLoaded.includes(comment.id) && comment.id > maxId) {
-          commentsLoaded.push(comment.id);
-          maxId = comment.id;
-          ee('commenthistorydiv').prepend(createCommentBubble({
-            ...comment
-          }));
-          ee('commentstatus').innerText = '';
-        }
-      }
-    }
-    catch (error) {
-      console.log("Failed to ping comments: " + error);
-    }
-    finally {
-      if (dayIndex === activeComicId) {
-        setTimeout(pingNew, 1500);
-      }
-    }
-  }
-  setTimeout(pingNew, 1500);
-}
 // displays comments in comment history according to the desired page
 let commentLoadId = 0;
 async function displayComments(dayIndex, page = 1) {
@@ -213,6 +176,42 @@ async function displayComments(dayIndex, page = 1) {
     }
     return false;
   }
+}
+// pings for new comments every 1500ms, posting them so the user can see realtime chat
+var commentsLoaded = [];
+async function pingForNewComments(dayIndex, maxCommentId) {
+  var maxId = maxCommentId;
+  const pingNew = async function () {
+    try {
+      const response = await getComments(dayIndex, 1);
+      const comments = response.comments;
+      if (dayIndex != activeComicId) return false;
+      
+      if (!Array.isArray(comments)) {
+        throw new Error('The comments response was not a list.');
+      }
+
+      for (const comment of comments.reverse()) {
+        if (!commentsLoaded.includes(comment.id) && comment.id > maxId) {
+          commentsLoaded.push(comment.id);
+          maxId = comment.id;
+          ee('commenthistorydiv').prepend(createCommentBubble({
+            ...comment
+          }));
+          ee('commentstatus').innerText = '';
+        }
+      }
+    }
+    catch (error) {
+      console.log("Failed to ping comments: " + error);
+    }
+    finally {
+      if (dayIndex === activeComicId) {
+        setTimeout(pingNew, 1500);
+      }
+    }
+  }
+  setTimeout(pingNew, 1500);
 }
 // creates more button and links it to a page refresh
 function createMoreButton(dayIndex, page) {
