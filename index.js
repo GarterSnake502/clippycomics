@@ -50,7 +50,7 @@ async function loadTranscript(dayIndex) {
     const response = await fetch(`./transcript/${dayIndex}.txt`);
 
     if (!response.ok) {
-        throw new Error(`Failed to load ${filename}`);
+        throw new Error(`Failed to load ${dayIndex}.txt`);
     }
 
     const transcript = await response.text();
@@ -127,8 +127,11 @@ function getCookie(cname) {
 // --- Manage Comments --- //
 const API_URL = "https://cc-comments-api.trouttrifle.workers.dev";
 // displays comments in comment history according to the desired page
+let commentGenerationId = 0; // increments each time it calls a firstLoad -> stops new comic pinging
 let commentLoadId = 0;
-async function displayComments(dayIndex, page = 1) {
+let highestCommentId = 0; // highest and lowest comment ids used to cheaply and quickly find new comments--spread outward as new comments discovered
+let lowestCommentId;
+async function displayComments(dayIndex, firstLoad = true) {
   if (dayIndex !== activeComicId) return false; // don't process if left page
 
   const loadId = ++commentLoadId;
@@ -136,35 +139,40 @@ async function displayComments(dayIndex, page = 1) {
   const status = ee('commentstatus');
 
   try {
-    const response = await getComments(dayIndex, page);
+    if (firstLoad) { // wipe comments if loading first page
+      history.replaceChildren();
+      highestCommentId = 0;
+      lowestCommentId = null;
+      status.innerText = 'Loading comments...';
+      commentGenerationId++;
+    }
+    const response = firstLoad
+      ? await getComments(dayIndex) // get first ten comments if first load
+      : await getComments(dayIndex, null, lowestCommentId - 1); // get next ten comments with ids < lowest found so far
     const comments = response.comments;
     const hasMore = response.hasMore;
     if (loadId !== commentLoadId || dayIndex !== activeComicId) return false; // don't process if left page or something else already got comment
     if (!Array.isArray(comments)) {
       throw new Error('The comments response was not a list.');
     }
-    if (page === 1) { // wipe comments if loading first page
-      history.replaceChildren();
-      commentsLoaded = [];
-      status.innerText = 'Loading comments...';
-    }
-    let highestCommentId = 0; // so we can ping, filtering highestCommentId
     for (const comment of comments) {
-      if (!commentsLoaded.includes(comment.id)) { // for moreComments--so we don't grab new ones
-        history.append(createCommentBubble(comment));
-        highestCommentId = Math.max(comment.id, highestCommentId);
-        commentsLoaded.push(comment.id);
-      }
+      history.append(createCommentBubble(comment));
+      highestCommentId = Math.max(comment.id, highestCommentId);
+
+      if (lowestCommentId === null)
+        lowestCommentId = comment.id;
+      else
+        lowestCommentId = Math.min(comment.id, lowestCommentId);
     }
     // delete more comments link; re-add if hasMore comments
     history.querySelector('.morecomments')?.remove();
     if (hasMore) {
-      history.append(createMoreButton(dayIndex, page + 1));
+      history.append(createMoreButton(dayIndex));
     }
-    // start pinging for comments if first load/page 1
-    if (page === 1) {
+    // start pinging for comments if first load
+    if (firstLoad) {
       status.innerText = comments.length ? '' : 'No comments yet.';
-      pingForNewComments(dayIndex, highestCommentId);
+      pingForNewComments(dayIndex, commentGenerationId);
     } else {
       status.innerText = '';
     }
@@ -172,7 +180,7 @@ async function displayComments(dayIndex, page = 1) {
   } catch (error) {
     if (loadId === commentLoadId && dayIndex === activeComicId) { // only display errors if still on page
       console.error('Failed to load comments:', error);
-      status.innerText = page === 1
+      status.innerText = firstLoad
         ? 'Could not load comments. Please try again.'
         : 'Could not load more comments. Please try again.';
     }
@@ -180,25 +188,22 @@ async function displayComments(dayIndex, page = 1) {
   }
 }
 // pings for new comments every 1500ms, posting them so the user can see realtime chat
-var commentsLoaded = [];
-async function pingForNewComments(dayIndex, maxCommentId) {
-  var maxId = maxCommentId;
+async function pingForNewComments(dayIndex, generationId) {
   const pingNew = async function () {
     try {
-      const response = await getComments(dayIndex, 1, maxId);
+      const response = await getComments(dayIndex, highestCommentId + 1); // minimum is highestCommentId -> only new comments
+      if (dayIndex != activeComicId || generationId != commentGenerationId) return false;
+
       const comments = response.comments;
-      if (dayIndex != activeComicId) return false;
-      
       if (!Array.isArray(comments)) {
         throw new Error('The comments response was not a list.');
       }
 
       for (const comment of comments.reverse()) {
-        commentsLoaded.push(comment.id);
-        maxId = Math.max(comment.id, maxId);
-        ee('commenthistorydiv').prepend(createCommentBubble({
-          ...comment
-        }));
+        if (comment.id <= highestCommentId) return; // prevents polling from returning a comic that the user posted during the time it took to fetch new comics
+
+        highestCommentId = Math.max(comment.id, highestCommentId);
+        ee('commenthistorydiv').prepend(createCommentBubble(comment));
         ee('commentstatus').innerText = '';
       }
     }
@@ -206,7 +211,7 @@ async function pingForNewComments(dayIndex, maxCommentId) {
       console.log("Failed to ping comments: " + error);
     }
     finally {
-      if (dayIndex === activeComicId) {
+      if (dayIndex === activeComicId && generationId === commentGenerationId) {
         setTimeout(pingNew, 1500);
       }
     }
@@ -214,7 +219,7 @@ async function pingForNewComments(dayIndex, maxCommentId) {
   setTimeout(pingNew, 1500);
 }
 // creates more button and links it to displaying the next page
-function createMoreButton(dayIndex, page) {
+function createMoreButton(dayIndex) {
   const link = document.createElement('a');
   link.className = 'morecomments';
   link.href = '#commenthistorydiv';
@@ -227,7 +232,7 @@ function createMoreButton(dayIndex, page) {
     link.setAttribute('disabled', 'true');
     ee('commentstatus').innerText = 'Loading more comments...';
 
-    const loaded = await displayComments(dayIndex, page);
+    const loaded = await displayComments(dayIndex, false);
     if (!loaded && dayIndex === activeComicId) {
       link.innerText = 'Load more comments';
       link.removeAttribute('disabled');
@@ -290,10 +295,10 @@ async function submitComment(event) {
     const result = await postComment(comicId, name, message);
     messageInput.value = '';
     if (comicId === activeComicId && result.comment) {
-      commentsLoaded.push(result.comment.id);
       ee('commenthistorydiv').prepend(createCommentBubble({
         ...result.comment
       }));
+      highestCommentId = Math.max(highestCommentId, result.comment.id);
     }
   } catch (error) {
     console.error('Failed to post comment:', error);
@@ -324,10 +329,12 @@ async function postComment(comic, name, message) {
     return result;
 }
 // Retrieve comments
-async function getComments(comic, page = 1, minId = 0) {
-    const response = await fetch(
-        `${API_URL}/comments?comic=${encodeURIComponent(comic)}&page=${encodeURIComponent(page)}&minId=${encodeURIComponent(minId)}`
-    );
+async function getComments(comic, minid = null, maxid = null) {
+    let url = `${API_URL}/comments?comic=${encodeURIComponent(comic)}`;
+    if (minid !== null) url += `&minid=${encodeURIComponent(minid)}`;
+    if (maxid !== null) url += `&maxid=${encodeURIComponent(maxid)}`;
+
+    const response = await fetch(url);
 
     if (!response.ok) {
         throw new Error("Failed to load comments");
