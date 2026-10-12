@@ -342,6 +342,13 @@ async function getComments(comic, minid = null, maxid = null) {
     return await response.json();
 }
 
+// --- Load Comment Block --- //
+ee('commentname').value = getCookie('commentname');
+ee('commentname').addEventListener('input', () => {
+  setCookie('commentname', encodeURIComponent(ee('commentname').value.trim()), 365);
+});
+ee('commentinput').addEventListener('submit', submitComment);
+
 // --- Set Max Date --- //
 const maxDateIndex = Math.round((maxDate - minDate) / msPerDay); // how many comics the current day covers
 if (maxDateIndex >= maxIndex) { // comics have ended--set maxDate to last comic
@@ -352,9 +359,4 @@ if (maxDateIndex >= maxIndex) { // comics have ended--set maxDate to last comic
 var loadedBookmark = getCookie('bookmark');
 if (loadedBookmark != '') bookmark = parseInt(loadedBookmark);
 currDate.setTime(addDays(minDate, bookmark).getTime());
-ee('commentname').value = getCookie('commentname');
-ee('commentname').addEventListener('input', () => {
-  setCookie('commentname', encodeURIComponent(ee('commentname').value.trim()), 365);
-});
-ee('commentinput').addEventListener('submit', submitComment);
 displayComicAtDate(currDate);
