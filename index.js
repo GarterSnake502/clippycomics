@@ -1,6 +1,6 @@
 const ee = (id) => document.getElementById(id);
 // TODO: switch maxDate to new Date(), set minDate to January 1, 2027
-const maxDate = new Date(2026, 7, 1); // how far the user can go right (by default, can't go past today (so the user can't look ahead))
+const maxDate = new Date(); // how far the user can go right (by default, can't go past today (so the user can't look ahead))
 maxDate.setHours(0, 0, 0, 0); // normalize hours to midnight for comparison
 const minDate = new Date(2026, 7, 0); // January 1, 2027
 const currDate = new Date(maxDate);
@@ -32,7 +32,6 @@ async function displayComicAtDate(date) {
 
   activeComicId = dayIndex;
 
-  ee('commenthistorydiv').replaceChildren(); // clear comment history
   displayComments(dayIndex);
   loadTranscript(activeComicId);
 
@@ -130,7 +129,7 @@ const API_URL = "https://cc-comments-api.trouttrifle.workers.dev";
 // displays comments in comment history according to the desired page
 let commentLoadId = 0;
 async function displayComments(dayIndex, page = 1) {
-  if (dayIndex !== activeComicId) return false;
+  if (dayIndex !== activeComicId) return false; // don't process if left page
 
   const loadId = ++commentLoadId;
   const history = ee('commenthistorydiv');
@@ -140,27 +139,29 @@ async function displayComments(dayIndex, page = 1) {
     const response = await getComments(dayIndex, page);
     const comments = response.comments;
     const hasMore = response.hasMore;
-    if (loadId !== commentLoadId || dayIndex !== activeComicId) return false;
+    if (loadId !== commentLoadId || dayIndex !== activeComicId) return false; // don't process if left page or something else already got comment
     if (!Array.isArray(comments)) {
       throw new Error('The comments response was not a list.');
     }
-    if (page === 1) {
+    if (page === 1) { // wipe comments if loading first page
       history.replaceChildren();
       commentsLoaded = [];
       status.innerText = 'Loading comments...';
     }
-    let highestCommentId = 0;
+    let highestCommentId = 0; // so we can ping, filtering highestCommentId
     for (const comment of comments) {
-      if (!commentsLoaded.includes(comment.id)) {
+      if (!commentsLoaded.includes(comment.id)) { // for moreComments--so we don't grab new ones
         history.append(createCommentBubble(comment));
-        if (comment.id > highestCommentId) highestCommentId = comment.id;
+        highestCommentId = Math.max(comment.id, highestCommentId);
         commentsLoaded.push(comment.id);
       }
     }
+    // delete more comments link; re-add if hasMore comments
     history.querySelector('.morecomments')?.remove();
     if (hasMore) {
       history.append(createMoreButton(dayIndex, page + 1));
     }
+    // start pinging for comments if first load/page 1
     if (page === 1) {
       status.innerText = comments.length ? '' : 'No comments yet.';
       pingForNewComments(dayIndex, highestCommentId);
@@ -184,7 +185,7 @@ async function pingForNewComments(dayIndex, maxCommentId) {
   var maxId = maxCommentId;
   const pingNew = async function () {
     try {
-      const response = await getComments(dayIndex, 1);
+      const response = await getComments(dayIndex, 1, maxId);
       const comments = response.comments;
       if (dayIndex != activeComicId) return false;
       
@@ -193,14 +194,12 @@ async function pingForNewComments(dayIndex, maxCommentId) {
       }
 
       for (const comment of comments.reverse()) {
-        if (!commentsLoaded.includes(comment.id) && comment.id > maxId) {
-          commentsLoaded.push(comment.id);
-          maxId = comment.id;
-          ee('commenthistorydiv').prepend(createCommentBubble({
-            ...comment
-          }));
-          ee('commentstatus').innerText = '';
-        }
+        commentsLoaded.push(comment.id);
+        maxId = Math.max(comment.id, maxId);
+        ee('commenthistorydiv').prepend(createCommentBubble({
+          ...comment
+        }));
+        ee('commentstatus').innerText = '';
       }
     }
     catch (error) {
@@ -325,9 +324,9 @@ async function postComment(comic, name, message) {
     return result;
 }
 // Retrieve comments
-async function getComments(comic, page = 1) {
+async function getComments(comic, page = 1, minId = 0) {
     const response = await fetch(
-        `${API_URL}/comments?comic=${encodeURIComponent(comic)}&page=${encodeURIComponent(page)}`
+        `${API_URL}/comments?comic=${encodeURIComponent(comic)}&page=${encodeURIComponent(page)}&minId=${encodeURIComponent(minId)}`
     );
 
     if (!response.ok) {
