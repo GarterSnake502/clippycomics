@@ -23,7 +23,7 @@ function formatDate(date) {
     .replace(/\//g, '-'); // instead of 01/01/26, does 1-1-26
 }
 async function displayComicAtDate(date) {
-  const dayIndex = Math.floor((date - minDate) / msPerDay);
+  const dayIndex = Math.round((date - minDate) / msPerDay);
   const dateFormatted = formatDate(date);
 
   ee('datelabel').innerText = dateFormatted;
@@ -96,8 +96,8 @@ function doJump() {
   }
 
   var jumpDate = new Date(year, month - 1, day);
-  if (jumpDate > maxDate) jumpDate.setTime(maxDate);
-  if (jumpDate < minDate) jumpDate.setTime(minDate);
+  if (jumpDate > maxDate) jumpDate.setTime(maxDate.getTime());
+  if (jumpDate < minDate) jumpDate.setTime(minDate.getTime());
   currDate.setTime(jumpDate);
   displayComicAtDate(currDate);
 }
@@ -343,7 +343,7 @@ async function getComments(comic, minid = null, maxid = null) {
 }
 
 // --- Set Max Date --- //
-const maxDateIndex = Math.floor((maxDate - minDate) / msPerDay); // how many comics the current day covers
+const maxDateIndex = Math.round((maxDate - minDate) / msPerDay); // how many comics the current day covers
 if (maxDateIndex >= maxIndex) { // comics have ended--set maxDate to last comic
   maxDate.setTime(addDays(minDate, maxIndex).getTime());
 }
