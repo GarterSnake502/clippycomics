@@ -23,6 +23,10 @@ button {
   width: 95%;
   height: auto;
 }
+#transcriptdiv {
+  max-height: 14dvh;
+  overflow-y: auto;
+}
 #commentdiv {
   width: 95%;
   margin: 16px auto;
@@ -80,8 +84,4 @@ button {
 .commenttimestamp {
   color: #555;
   font-size: 0.8em;
-}
-#transcriptdiv {
-  max-height: 14dvh;
-  overflow-y: auto;
 }
