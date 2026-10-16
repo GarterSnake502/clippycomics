@@ -7,9 +7,9 @@
 </head>
 <body>
   <div id='contentdiv'>
-      <label id='clippycomicslabel'>Clippy Comics</label>
+      <label class='header1' id='clippycomicslabel'>Clippy Comics</label>
       <br>
-      <label id='datelabel'></label>
+      <label class='header2' id='datelabel'></label>
       <br>
       <button id='prevbtn' onclick='doPrev();'>Previous</button>
       <button id='jumpbtn' onclick='doJump();'>Jump</button>
@@ -34,6 +34,9 @@
       </div>
   </div>
   <p><br></p>
-  <script src="index.js"></script>
+  <script src='common.js'></script>
+  <script src='comments-api.js'></script>
+  <script src='comments-ui.js'></script>
+  <script src='index.js'></script>
 </body>
 </html>

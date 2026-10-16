@@ -6,10 +6,10 @@ html, body {
 button {
   font-size: 16px;
 }
-#clippycomicslabel {
+.header1 {
   font-size: 32px;
 }
-#datelabel {
+.header2 {
   font-size: 24px;
 }
 #contentdiv {
