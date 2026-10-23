@@ -7,3 +7,5 @@ Currently displays the first half of the year, ahead of schedule for testing pur
 It also includes an anonymous commenting system where the user can anonymously comment on the comic, optionally providing a cookie-stored name. The comment system is realtime, so the user will see other's comments without reloading. Pagination allows us to add a "Load More Comments..." button if there are more than ten comments for performance reasons.
 
 Future innovations could include a Forum page, a Fan Art page, a "Subscribe to Email" page, and a "Contact the author" page (all accessible through a top-level banner). I could also be added to make the website more appealing, as it is presently very basic-looking.
+
+TODO: make a function in comments-ui that displays comments as given. Perhaps you can give this function a callback function, which it can use to ping for new comments or display more with "Show more comments...". An extension of that function can ping for new functions.

@@ -110,5 +110,12 @@ if (maxDateIndex >= maxIndex) { // comics have ended--set maxDate to last comic
 // --- Load Bookmarked Comic --- //
 var loadedBookmark = getCookie('bookmark');
 if (loadedBookmark != '') bookmark = parseInt(loadedBookmark);
-currDate.setTime(addDays(minDate, bookmark).getTime());
+// get comic parameter if exists; else, load bookmark
+const comicParameter = new URLSearchParams(window.location.search).get('comic');
+const requestedComic = comicParameter === null ? NaN : Number(comicParameter);
+const comicToLoad = Number.isInteger(requestedComic) && requestedComic >= 0 && requestedComic <= maxIndex
+  ? requestedComic
+  : bookmark;
+currDate.setTime(addDays(minDate, comicToLoad).getTime());
+
 displayComicAtDate(currDate);
