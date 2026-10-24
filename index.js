@@ -1,4 +1,4 @@
-const maxDate = new Date(2026, 7, 1); // how far the user can go right (by default, can't go past today (so the user can't look ahead))
+const maxDate = new Date(2026, 7, 2); // how far the user can go right (by default, can't go past today (so the user can't look ahead))
 maxDate.setHours(0, 0, 0, 0); // normalize hours to midnight for comparison
 const minDate = new Date(2026, 7, 0); // TODO: January 1, 2027
 const currDate = new Date(maxDate);
@@ -39,6 +39,8 @@ async function displayComicAtDate(date) {
 
   bookmark = dayIndex;
   setCookie('bookmark', bookmark, 365);
+  window.history.pushState({}, "", "/"); // get rid of url parameter, so user doesn't accidentally share specific link
+  // "/index.html?comic=" + bookmark); // change address url w/o reloading
 }
 
 

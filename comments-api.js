@@ -34,7 +34,7 @@ async function getComments(comic, minid = null, maxid = null) {
 }
 // Retrieve all comments, regardless of comic (recent.html)
 async function getAllComments(minid = null, maxid = null) {
-    let url = `${API_URL}/comments`;
+    let url = `${API_URL}/comments?`;
     if (minid !== null) url += `&minid=${encodeURIComponent(minid)}`;
     if (maxid !== null) url += `&maxid=${encodeURIComponent(maxid)}`;
 
