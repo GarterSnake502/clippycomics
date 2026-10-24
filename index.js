@@ -39,7 +39,7 @@ async function displayComicAtDate(date) {
 
   bookmark = dayIndex;
   setCookie('bookmark', bookmark, 365);
-  window.history.pushState({}, "", "/"); // get rid of url parameter, so user doesn't accidentally share specific link
+  // window.history.pushState({}, "", "/clippycomics/"); // get rid of url parameter, so user doesn't accidentally share specific link
   // "/index.html?comic=" + bookmark); // change address url w/o reloading
 }
 
