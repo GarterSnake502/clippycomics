@@ -27,6 +27,9 @@ async function displayComicAtDate(date) {
 
   ee('datelabel').innerText = dateFormatted;
   ee('comicdiv').src = './img/' + dayIndex + '.jpg';
+  // cache next and previous comic strips
+  ee('prevcomicdiv').src = './img/' + (dayIndex + 1) + '.jpg';
+  ee('nextcomicdiv').src = './img/' + (dayIndex + 1) + '.jpg';
 
   activeComicId = dayIndex;
 
@@ -40,7 +43,7 @@ async function displayComicAtDate(date) {
   bookmark = dayIndex;
   setCookie('bookmark', bookmark, 365);
   // window.history.pushState({}, "", "/clippycomics/"); // get rid of url parameter, so user doesn't accidentally share specific link
-  // "/index.html?comic=" + bookmark); // change address url w/o reloading
+  // window.history.pushState({}, "", "/index.html?comic=" + bookmark); // change address url w/o reloading
 }
 
 
