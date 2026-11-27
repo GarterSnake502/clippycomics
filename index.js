@@ -89,14 +89,19 @@ function doLatest() {
 }
 function doJump() {
   var month = parseInt(prompt("Enter month (1-12): "), 10);
+  console.log(month);
+  if (isNaN(month)) {
+    alert("The inputted month was invalid."); return;
+  }
   var day = parseInt(prompt("Enter day: "), 10);
+  if (isNaN(day)) {
+    alert("The inputted day was invalid."); return;
+  }
   var yearStr = prompt("Enter year (Default 2027): ");
   if (yearStr == '') yearStr = '2027'; // hardcoded default 2027
   var year = parseInt(yearStr, 10);
-
-  if (isNaN(day) || isNaN(month) || isNaN(year)) {
-    alert("The inputted date was invalid.");
-    return;
+  if (isNaN(year)) {
+    alert("The inputted date was invalid."); return;
   }
 
   var jumpDate = new Date(year, month - 1, day);
