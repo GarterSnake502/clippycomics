@@ -28,7 +28,7 @@ async function displayComicAtDate(date) {
   ee('datelabel').innerText = dateFormatted;
   ee('comicdiv').src = './img/' + dayIndex + '.jpg';
   // cache next and previous comic strips
-  ee('prevcomicdiv').src = './img/' + (dayIndex + 1) + '.jpg';
+  ee('prevcomicdiv').src = './img/' + (dayIndex - 1) + '.jpg';
   ee('nextcomicdiv').src = './img/' + (dayIndex + 1) + '.jpg';
 
   activeComicId = dayIndex;
